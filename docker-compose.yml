@@ -1,0 +1,84 @@
+version: "3.3"
+services:
+
+  ticketing_simple:
+    tty: true
+    container_name: ticketing_simple
+    environment:
+      SERVICE_NAME: ticketing_simple
+      SERVICE_TAGS: dev
+    restart: always
+    build:
+      args:
+        user: www-data
+        uid: 33
+      context: ./docker/php
+      dockerfile: Dockerfile
+    user: root
+    #        composer update && composer install &&
+#    command: sh -c "php artisan storage:link && php artisan serve --host=0.0.0.0 --port=8000"
+    ports:
+      - "0.0.0.0:8000:8000"
+    volumes:
+      - ./:/app
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  db:
+    container_name: ticketing_simple_db
+    image: mysql:5.7.22
+    restart: always
+    environment:
+      MYSQL_DATABASE: ticketing_simple
+      MYSQL_USER: root
+      MYSQL_PASSWORD: Ali1234##
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - .docker/mysql/.mydb:/var/lib/mysql
+    networks:
+      - app-network
+
+
+
+
+  phpmyadmin_ticketing_simple:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin_ticketing_simple
+    links:
+      - db
+    #        environment:
+    #            PMA_HOST: db
+    #            PMA_PORT: 3306
+    #            PMA_ARBITRARY: 1
+    restart: always
+    ports:
+      - 8080:80
+    networks:
+      - app-network
+
+
+  redis:
+    container_name: redis
+    image: redis:7-alpine
+    restart: always
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD:-aaaaaaaaaaaaa}"
+    command: >
+      redis-server
+      --requirepass  ${REDIS_PASSWORD}
+      --maxmemory 1gb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
